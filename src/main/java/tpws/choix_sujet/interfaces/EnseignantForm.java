@@ -1,7 +1,10 @@
 package tpws.choix_sujet.interfaces;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -24,21 +27,15 @@ public class EnseignantForm extends javax.swing.JFrame {
         
         int id_compte = global_id_compte;
         global_id = ensg.getIdFromCompte(id_compte);
-        
-        ResultSet enseignantData = ensg.getEnseignant(global_id);
-        try {
-            while(enseignantData.next()){
-                e1.setText(enseignantData.getString("nom"));
-                e2.setText(enseignantData.getString("prenom"));
-                e3.setText(enseignantData.getString("date_naiss"));
-                e4.setText(enseignantData.getString("lieu_naiss"));
-                e5.setText(enseignantData.getString("n_telephone"));
-                e6.setText(enseignantData.getString("email"));
-                e7.setText(enseignantData.getString("grade"));
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(EnseignantForm.class.getName()).log(Level.SEVERE, null, ex);
-        }
+ 
+                e1.setText(ensg.getNom(global_id));
+                e2.setText(ensg.getPrenom(global_id));
+                e3.setText(ensg.getDate(global_id));
+                e4.setText(ensg.getLieu(global_id));
+                e5.setText(ensg.getNumero(global_id));
+                e6.setText(ensg.getEmail(global_id));
+                e7.setText(ensg.getGrade(global_id));
+       
     }
 
     @SuppressWarnings("unchecked")
@@ -550,7 +547,21 @@ public class EnseignantForm extends javax.swing.JFrame {
         UiFunctions.switchpanel(panelb2, Main);
         
         DefaultTableModel model = UiFunctions.tableModel1();
-        ResultSet data = sjt.getAllSujetEnseigant(global_id);
+        
+        ResultSet data = null;
+        String query = "select * from sujet where id_enseignant = "+global_id+" ";
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+            Statement stmt = con.createStatement();
+            data = stmt.executeQuery(query);
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         jTable1.setRowHeight(100);
         try {
             while(data.next()){
@@ -646,8 +657,21 @@ public class EnseignantForm extends javax.swing.JFrame {
         Main.add(panelb2);
         Main.repaint();
         Main.revalidate();
-        DefaultTableModel model = UiFunctions.tableModel1();
-        ResultSet data = sjt.getAllSujetEnseigant(global_id);
+        DefaultTableModel model = UiFunctions.tableModel1();        
+        
+        ResultSet data = null;
+        String query = "select * from sujet where id_enseignant = "+global_id+" ";
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+            Statement stmt = con.createStatement();
+            data = stmt.executeQuery(query);
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
+        }
         jTable1.setRowHeight(100);
         try {
             while(data.next()){

@@ -1,11 +1,12 @@
 package tpws.choix_sujet.interfaces;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import tpws.choix_sujet.classes.Connexion;
 import tpws.choix_sujet.classes.Enseignant;
 import tpws.choix_sujet.classes.Etudiant;
 import tpws.choix_sujet.classes.Sujet;
@@ -675,8 +676,8 @@ public class SinginForm extends javax.swing.JFrame {
         incorrectUser.setVisible(false);
         incorrectPass.setVisible(false);
         
-        ResultSet data = usr.getUser(inputUser);
-        int check = usr.checkUser(data, inputPass);
+        String pass = usr.getPass(inputUser);
+        int check = usr.checkUser(pass, inputPass);
         
         switch (check) {
             case 0:
@@ -738,37 +739,38 @@ public class SinginForm extends javax.swing.JFrame {
             incorrectUser2.setText("Entrer un pass");
             incorrectUser2.setVisible(true);
         }else{
-            boolean exist = usr.checkUserExist(usr.getAllUsers(), user);
+            boolean exist = usr.checkUserExist(user);
 
             if(exist){
                 incorrectUser1.setText("user existant");
                 incorrectUser1.setVisible(true);
             }else{
                 String query = "INSERT INTO compte(user, pass, role) values('"+user+"', '"+pass+"', '"+role+"') ";
-                Connexion conne = new Connexion();
-                conne.insertData(query);
-                
-                String id = null;
-                ResultSet data = usr.getUser(user);
                 try {
-                    while(data.next()){
-                        id = Integer.toString(data.getInt(1));
-                    }
+                    Class.forName("com.mysql.cj.jdbc.Driver");
+                    Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+                    Statement stmt = con.createStatement();
+                    stmt.executeUpdate(query);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 } catch (SQLException ex) {
-                    Logger.getLogger(SinginForm.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                
+                int id = usr.getId(user);
+                
                 if(role.equals("etudiant")){
                     Main.removeAll();
                     Main.add(Etudiant);
                     Main.repaint();
                     Main.revalidate();
-                    idlabele.setText(id);
+                    idlabele.setText(String.valueOf(id));
                 }else {
                     Main.removeAll();
                     Main.add(Enseignant);
                     Main.repaint();
                     Main.revalidate();
-                    idlabel.setText(id);
+                    idlabel.setText(String.valueOf(id));
                 }
             }
         }
@@ -791,8 +793,16 @@ public class SinginForm extends javax.swing.JFrame {
         String muf = etudmuf.getText();
         String idc = idlabele.getText();
         String query = "INSERT INTO etudiant(nom, prenom, date_naiss, lieu_naiss, n_telephone, email, moyenne_cursus, moyenne_uf, id_sujet, id_compte) values ('"+nom+"', '"+prenom+"', '"+ddn+"', '"+ldn+"', '"+telephone+"', '"+email+"', '"+mc+"', '"+muf+"', NULL, '"+idc+"')";
-        Connexion conne = new Connexion();
-        conne.insertData(query);
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+            Statement stmt = con.createStatement();
+            stmt.executeUpdate(query);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         Main.removeAll();
         Main.add(Login);
@@ -811,8 +821,16 @@ public class SinginForm extends javax.swing.JFrame {
         String grade = engrade.getText();
         String idc = idlabel.getText();
         String query = "INSERT INTO enseignant(nom, prenom, date_naiss, lieu_naiss, n_telephone, email, grade, id_compte) values ('"+nom+"', '"+prenom+"', '"+ddn+"', '"+ldn+"', '"+telephone+"', '"+email+"', '"+grade+"', '"+idc+"')";
-        Connexion conne = new Connexion();
-        conne.insertData(query);
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+            Statement stmt = con.createStatement();
+            stmt.executeUpdate(query);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         Main.removeAll();
         Main.add(Login);

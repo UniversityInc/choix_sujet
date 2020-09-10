@@ -2,8 +2,11 @@ package tpws.choix_sujet.interfaces;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -14,36 +17,29 @@ import tpws.choix_sujet.classes.Sujet;
 import static tpws.choix_sujet.interfaces.SinginForm.global_id_compte;
 
 public class EtudiantForm extends javax.swing.JFrame {
-    Enseignant ensg = new Enseignant();
-    Sujet sjt = new Sujet();
-    Etudiant etd = new Etudiant();
     int global_id;
     public EtudiantForm() {
+        Etudiant etd = new Etudiant();
         initComponents();
         setTitle("Etudiant");
         setLocationRelativeTo(null);
         UiFunctions.changecolor(b1, b2, b3, b4, b5, b6);
-
         int id_compte = global_id_compte;
         int id = etd.getIdEtudiantFromCompte(id_compte);
         transferedID.setText(Integer.toString(id));
-                
-        ResultSet etudiantData;
-        try {
-            etudiantData = etd.getEtudiant(id);
-            while(etudiantData.next()){
-            e1.setText(etudiantData.getString(2)); 
-            e2.setText(etudiantData.getString(3));
-            e3.setText(etudiantData.getString(4));
-            e4.setText(etudiantData.getString(5));
-            e5.setText(etudiantData.getString(6));
-            e6.setText(etudiantData.getString(7));
-            e7.setText(Float.toString(etudiantData.getFloat(8)));
-            e8.setText(Float.toString(etudiantData.getFloat(9)));
-        }
-        } catch (SQLException ex) {
-            Logger.getLogger(EtudiantForm.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
+        e1.setText(etd.getNom(id));
+        e2.setText(etd.getPrenom(id));
+        e3.setText(etd.getDate(id));
+        e4.setText(etd.getLieu(id));
+        e5.setText(etd.getNumero(id));
+        e6.setText(etd.getEmail(id));
+        e7.setText(String.valueOf(etd.getMC(id)));
+        e8.setText(String.valueOf(etd.getMUF(id)));
+        
+        
+        
+        
         global_id = Integer.valueOf(transferedID.getText());
     }
 
@@ -651,10 +647,30 @@ public class EtudiantForm extends javax.swing.JFrame {
 
     private void jLabel2MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MousePressed
         // TODO add your handling code here:
+        Sujet sjt = new Sujet();
+        Etudiant etd = new Etudiant();
         UiFunctions.changecolor(b2, b1, b3, b4, b5, b6);
         UiFunctions.switchpanel(panelb2, Main);
         DefaultTableModel model = UiFunctions.tableModel();
-        ResultSet data = sjt.getAllSujet();
+        
+        
+        ResultSet data = null;
+        
+        String query = "SELECT s.id, s.titre, s.enonce, s.pris, e.nom, e.prenom FROM sujet as s INNER JOIN enseignant as e on s.id_enseignant = e.id";
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+            Statement stmt = con.createStatement();
+            data = stmt.executeQuery(query);
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        
+        
         jTable1.setRowHeight(100);
         try {
             while(data.next()){
@@ -672,26 +688,26 @@ public class EtudiantForm extends javax.swing.JFrame {
         }
         jTable1.setModel(model);
         
-        ResultSet etudiantData = etd.getEtudiant(Integer.valueOf(transferedID.getText()));
-        int id_sujet = 0;
-        try {
-            while(etudiantData.next()){
-                id_sujet = etudiantData.getInt("id_sujet");
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(EtudiantForm.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        int id_sujet = etd.getIdSjt(Integer.valueOf(transferedID.getText()));
         if(id_sujet==0){
             sujet.setText("Vous n'avez pas encore pris de sujet");
         }else{
-            ResultSet sujetData = sjt.getSujetEnseignant(id_sujet);
+            ResultSet sujetData = null;  
+            String query1 = "SELECT s.id, s.titre, s.enonce, s.pris, e.nom, e.prenom FROM sujet as s INNER JOIN enseignant as e on s.id_enseignant = e.id WHERE s.id = "+id_sujet+" ";
             try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+                Statement stmt = con.createStatement();
+                sujetData = stmt.executeQuery(query1);
                 while(sujetData.next()){
-                    sujet.setText(sujetData.getString("titre"));
-                    enseignant.setText(sujetData.getString("nom")+" "+sujetData.getString("prenom"));
-                }
+                        sujet.setText(sujetData.getString("titre"));
+                        enseignant.setText(sujetData.getString("nom")+" "+sujetData.getString("prenom"));
+                    }
+
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             } catch (SQLException ex) {
-                Logger.getLogger(EtudiantForm.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         if(jTable1.getSelectionModel().isSelectionEmpty()){
@@ -740,6 +756,7 @@ public class EtudiantForm extends javax.swing.JFrame {
 
     private void enregistrerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enregistrerActionPerformed
         // TODO add your handling code here:
+        Etudiant etd = new Etudiant();
         int id = Integer.valueOf(transferedID.getText()) ;
         etd.updateEtudiant(id, e1.getText(), e2.getText(), e3.getText(), e4.getText(), e5.getText(), e6.getText(), e7.getText(), e8.getText());
         enregistrer.setEnabled(false);
@@ -761,6 +778,7 @@ public class EtudiantForm extends javax.swing.JFrame {
 
     private void infoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_infoActionPerformed
         // TODO add your handling code here:
+        Sujet sjt = new Sujet();
         Main.removeAll();
         Main.add(panelb3);
         Main.repaint();
@@ -774,31 +792,39 @@ public class EtudiantForm extends javax.swing.JFrame {
         String s_id_sujet = (String) jTable1.getValueAt(jTable1.getSelectedRow(), 0);
         int id_sujet = Integer.valueOf(s_id_sujet);
         
-        ResultSet data = sjt.getSujet(id_sujet);
-        try {
-            while(data.next()){
-                titre.setText(data.getString("titre"));
-                encadreur.setText((String)jTable1.getValueAt(jTable1.getSelectedRow(), 3));
-                enonce.setText(data.getString("enonce"));
-                
-                int dispo = data.getInt("pris");
-                String dispon = sjt.checkDispo(dispo);
-                disponibilite.setText(dispon);
-                
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(EtudiantForm.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        titre.setText(sjt.getTitre(id_sujet));
+        encadreur.setText((String)jTable1.getValueAt(jTable1.getSelectedRow(), 3));
+        enonce.setText(sjt.getEnonce(id_sujet));
+        int dispo = sjt.getPris(id_sujet);
+        String dispon = sjt.checkDispo(dispo);
+        disponibilite.setText(dispon);
     }//GEN-LAST:event_infoActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
+        Sujet sjt = new Sujet();
+        Etudiant etd = new Etudiant();
         Main.removeAll();
         Main.add(panelb2);
         Main.repaint();
         Main.revalidate();
         DefaultTableModel model = UiFunctions.tableModel();
-        ResultSet data = sjt.getAllSujet();
+        
+        ResultSet data = null;
+        
+        String query = "SELECT s.id, s.titre, s.enonce, s.pris, e.nom, e.prenom FROM sujet as s INNER JOIN enseignant as e on s.id_enseignant = e.id";
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+            Statement stmt = con.createStatement();
+            data = stmt.executeQuery(query);
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException ex) {
+            Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         jTable1.setRowHeight(100);
         try {
             while(data.next()){
@@ -816,26 +842,26 @@ public class EtudiantForm extends javax.swing.JFrame {
         }
         jTable1.setModel(model);
         
-        ResultSet etudiantData = etd.getEtudiant(Integer.valueOf(transferedID.getText()));
-        int id_sujet = 0;
-        try {
-            while(etudiantData.next()){
-                id_sujet = etudiantData.getInt("id_sujet");
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(EtudiantForm.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        int id_sujet = etd.getIdSjt(Integer.valueOf(transferedID.getText()));
+        
         if(id_sujet==0){
             sujet.setText("Vous n'avez pas encore pris de sujet");
-        }else{
-            ResultSet sujetData = sjt.getSujetEnseignant(id_sujet);
+        }else{            
+            ResultSet sujetData = null;  
+            String query1 = "SELECT s.id, s.titre, s.enonce, s.pris, e.nom, e.prenom FROM sujet as s INNER JOIN enseignant as e on s.id_enseignant = e.id WHERE s.id = "+id_sujet+" ";
             try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/choix_pfe?serverTimezone=UTC","root","");
+                Statement stmt = con.createStatement();
+                sujetData = stmt.executeQuery(query1);
                 while(sujetData.next()){
                     sujet.setText(sujetData.getString("titre"));
                     enseignant.setText(sujetData.getString("nom")+" "+sujetData.getString("prenom"));
                 }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             } catch (SQLException ex) {
-                Logger.getLogger(EtudiantForm.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Enseignant.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         if(jTable1.getSelectionModel().isSelectionEmpty()){
@@ -849,6 +875,8 @@ public class EtudiantForm extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
+        Sujet sjt = new Sujet();
+        Etudiant etd = new Etudiant();
         String s_id_s = (String) jTable1.getValueAt(jTable1.getSelectedRow(), 0);
         int id_s = Integer.valueOf(s_id_s);
         String dispo = disponibilite.getText();
@@ -877,16 +905,9 @@ public class EtudiantForm extends javax.swing.JFrame {
             int confirmation = JOptionPane.showConfirmDialog(null, "Ce Sujet est déjà pris, voulez-vous le prendre quand meme?", "Avertissement", JOptionPane.YES_NO_OPTION);
             if(confirmation == JOptionPane.YES_OPTION){
                 id_etudiant = etd.getIdEtudiantFromIdSujet(id_s);
-                ResultSet data = etd.getEtudiant(id_etudiant);
-                float moyenne_c = 0, moyenne_uf = 0;
-                try {
-                    while(data.next()){
-                        moyenne_c = data.getFloat("moyenne_cursus");
-                        moyenne_uf = data.getFloat("moyenne_uf");
-                    }
-                } catch (SQLException ex) {
-                    Logger.getLogger(EtudiantForm.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                float moyenne_c = etd.getMC(id_etudiant); 
+                float moyenne_uf = etd.getMUF(id_etudiant);
+                
                 float new_moyenne_c = Float.valueOf(e7.getText());
                 float new_moyenne_uf = Float.valueOf(e8.getText());
                 int compare = etd.compareMoy(new_moyenne_c, moyenne_c);
